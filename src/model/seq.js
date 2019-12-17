@@ -1,0 +1,23 @@
+import Sequelize from 'sequelize';
+
+const conf = {
+  host: 'localhost',
+  dialect: 'mysql',
+  define: {
+    charset: 'utf8',
+    dialectOptions: {
+      collate: 'utf8_general_ci'
+    },
+    timestamps: true
+  },
+  timezone: '+08:00'
+};
+conf.pool = {
+  max: 5,//最大连接数量
+  min: 0,//最小
+  idle: 10000//10秒后释放
+};
+
+const seq = new Sequelize('subscription', 'root', '', conf);
+
+export {seq}
