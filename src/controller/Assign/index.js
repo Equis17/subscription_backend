@@ -1,6 +1,8 @@
 import assignModel from '../../model/Assign'
 import sequelize from 'sequelize';
-
+import bookListModel from '../../model/BookList';
+import JWTDecode from 'jwt-decode';
+import xlsx from 'node-xlsx'
 const Op = sequelize.Op;
 
 class AssignController {
@@ -8,7 +10,7 @@ class AssignController {
   }
 
   async getList(ctx) {
-    const {className='', assignName='', userName=''} = ctx.query;
+    const {className = '', assignName = '', userName = ''} = ctx.query;
     ctx.body = await assignModel.getList({
       className: {[Op.like]: `%${className}%`},
       assignName: {[Op.like]: `%${assignName}%`},
@@ -31,6 +33,8 @@ class AssignController {
     const {userId, classId, status, assignId} = ctx.request.body;
     ctx.body = await assignModel.update({id, userId, classId, status, assignId});
   }
+
+
 }
 
 export default new AssignController()

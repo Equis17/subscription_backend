@@ -131,7 +131,7 @@ class UserBookModel {
   async getUserBook({userId = ''}) {
     try {
       const userClassInfo = await stuClassModel.getInfoByUserId({
-        userId: '3',
+        userId,
         className: {[Op.like]: '%%'},
         session: {[Op.like]: '%%'},
         collegeName: {[Op.like]: '%%'}

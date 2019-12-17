@@ -43,9 +43,16 @@ class ClassController {
   async getUserClassList(ctx) {
     ctx.body = await classModel.getUserClassList();
   }
-  async getAssignerList(ctx){
+
+  async getAssignerList(ctx) {
     const {_auth: roleId, _uid: assignId} = JWTDecode(ctx.header.authorization);
-    ctx.body=await classModel.getAssignerClassList({assignId});
+    ctx.body = await classModel.getAssignerClassList({assignId});
+  }
+
+  async insertByUser(ctx) {
+    const {_auth: roleId, _uid: userId} = JWTDecode(ctx.header.authorization);
+    const {classId} = ctx.request.body;
+    ctx.body = await stuClassModel.insertByUser({userId, classId})
   }
 }
 

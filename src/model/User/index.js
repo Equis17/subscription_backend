@@ -110,7 +110,7 @@ class UserModel {
       const assignList = await User.findAll({
         raw: true,
         where: {
-          roleId: toggle ? '6' : '3'
+          roleId: toggle ? '6' : '4'
         },
         attributes: [
           'id',

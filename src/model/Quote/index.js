@@ -113,7 +113,6 @@ class QuoteModel {
           join(',').
           split(','))
         : [];
-
       const uniqList = bookIdsList.map(item => _.maxBy(list.filter(book => book.bookId === item), o => o.bookListStatus));
       const quotedList = await Quote.findAll({
         raw: true,

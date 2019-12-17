@@ -68,8 +68,6 @@ const delValue = (key) => client.del(key, (err, res) => res === 1
   ? console.log('delete successfully')
   : console.log('delete redis key error:' + err));
 
-// setValue('4','3',10);
-// getValue('4').then((res)=>console.log(res))
 export {
   client,
   setValue,

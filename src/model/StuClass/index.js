@@ -78,6 +78,15 @@ class StuClassModel {
       ]
     });
   }
+
+  async insertByUser({userId = '', classId = ''}) {
+    try {
+      await StuClass.create({userId, classId});
+      return {code: 0, message: '保存成功'}
+    } catch (e) {
+      console.log(e)
+    }
+  }
 }
 
 export default new StuClassModel()

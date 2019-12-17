@@ -1,5 +1,6 @@
 import Router from 'koa-router';
 import bookController from '../../controller/Book'
+import publicController from '../../controller/Public';
 
 const router = new Router();
 

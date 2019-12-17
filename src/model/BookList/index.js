@@ -1,4 +1,4 @@
-import {Assign, Book, BookList, Class, College, Quote, StuClass, Subscription, UserBook} from '../model';
+import {Assign, Book, BookList, Class, College, Quote, Seller, StuClass, Subscription, User, UserBook} from '../model';
 import _ from 'lodash'
 import Sequelize from 'sequelize';
 
@@ -35,7 +35,7 @@ class BookListModel {
   }
 
   async insert({bookIds = '', classIds = '', toggle = '', bookListName = '', collegeId = '', subscriptionId = ''}) {
-    if (!_.isEmpty(_.omitBy({bookIds, classIds, toggle, subscriptionId, bookListName, collegeId}, _.identity))) return {code: 9999, message: '参数不能为空'};
+    if (!_.isEmpty(_.omitBy({ classIds, toggle, subscriptionId, bookListName, collegeId}, _.identity))) return {code: 9999, message: '参数不能为空'};
     try {
       await BookList.create({bookListName, bookIds, classIds, subscriptionId, collegeId, toggle: toggle.toString() === '1' ? '1' : '0'});
       return {code: 0, message: '添加成功'};
@@ -87,7 +87,7 @@ class BookListModel {
   async getBookListInfo({id = '', roleId = '', status = ''}) {
     if (roleId.toString() !== '4') return {code: 0, data: {}};
     try {
-      const classInfo = await StuClass.findOne({raw: true, where: {userId: id}, attributes: ['id']});
+      const classInfo = await StuClass.findOne({raw: true, where: {userId: id}, attributes: ['classId']});
       if (!classInfo) return {code: 0, data: {}};
       const bookList = await BookList.findAll({
         raw: true,
@@ -110,7 +110,7 @@ class BookListModel {
       return {
         code: 0,
         data: bookList.filter(book => book.classIds.split(',').
-          includes(classInfo.id.toString()))
+          includes(classInfo.classId.toString()))
       }
     } catch (e) {
       console.log(e)
@@ -233,7 +233,7 @@ class BookListModel {
           data[key] = _.countBy(data[key], 'bookId')
         }
 
-        return {data,classId:id}
+        return {data, classId: id}
       }));
       const data = bookList.filter(item => JSON.stringify(item.data) !== '{}').
         map(item => {
@@ -241,17 +241,80 @@ class BookListModel {
           const bookList = [];
           for (let i in item['data'][subscriptionId]) {
             if (!item['data'][subscriptionId].hasOwnProperty(i)) continue;
-            bookList.push({bookId:i,count:item['data'][subscriptionId][i]});
+            bookList.push({bookId: i, count: item['data'][subscriptionId][i]});
           }
-          return {subscriptionId, bookList,classId:item.classId}
+          return {subscriptionId, bookList, classId: item.classId}
         });
       return {code: 0, data}
     } catch (e) {
+      console.log(e)
+    }
+  }
 
+  async createExcelBookList({assignId = ''}) {
+    try {
+      const result = await this.getAssignerBookListWithClass({assignId});
+      const assignerInfo = await Assign.findOne({
+        raw: true,
+        where: {assignId},
+        include: [
+          {model: User, attributes: [], as: 'user'}
+        ],
+        attributes: [
+          Sequelize.col('user.realName'),
+          Sequelize.col('user.phoneNumber')
+        ]
+      });
+      const allList = result.data;
+      const data = await Promise.all(allList.map(async item => {
+        const subscriptionInfo = await Subscription.findOne({
+          raw: true,
+          where: {id: item.subscriptionId},
+          attributes: ['subscriptionName']
+        });
+        const subscriptionName = subscriptionInfo.subscriptionName;
+        const classInfo = await Class.findOne({
+          raw: true,
+          include: [
+            {model: College, attributes: [], as: 'college'},
+          ],
+          where: {id: item.classId},
+          attributes: ['className', Sequelize.col('college.collegeName')]
+        });
+        const className = `${classInfo.collegeName}-${classInfo.className}`;
+        const bookList = await Promise.all(item.bookList.map(async userBook => {
+          const quoteInfo = await Quote.findOne({
+            raw: true,
+            where: {status: 2, bookId: userBook.bookId},
+            include: [
+              {model: Seller, as: 'seller', attributes: []},
+              {model: Book, as: 'book', attributes: []}
+            ],
+            attributes: [
+              'sellerId',
+              Sequelize.col('book.bookName'),
+              Sequelize.col('book.ISBN'),
+              Sequelize.col('seller.sellerName'),
+              Sequelize.col('seller.phoneNumber'),
+              Sequelize.col('seller.address'),
+              Sequelize.col('seller.source'),
+              Sequelize.col('seller.email'),
+              'price'
+            ]
+          });
+          return {...quoteInfo, count: userBook.count}
+        }));
+        return {subscriptionName, className, bookList}
+      }));
+      return {data,assignerInfo}
+    } catch (e) {
+      console.log(e)
     }
   }
 }
-//TODO 生成excel表格
-new BookListModel().getAssignerBookListWithClass({assignId:4}).then(res=>console.log(res))
+
+// //TODO 生成excel表格
+ new BookListModel().createExcelBookList({assignId: 13}).
+   then(res => console.log(res));
 
 export default new BookListModel()
