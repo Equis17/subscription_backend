@@ -10,49 +10,88 @@ class ClassController {
   }
 
   async getList(ctx) {
-    const {collegeId, className = '', session = '', toggle} = ctx.query;
-    ctx.body = await classModel.getList({
-      collegeId,
-      toggle,
-      session: {[Op.like]: `%${session}%`},
-      className: {[Op.like]: `%${className}%`}
-    });
+    const {_auth: roleId} = JWTDecode(ctx.header.authorization);
+    if (![1, 2, 3].includes(roleId)) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {collegeId, className = '', session = '', toggle} = ctx.query;
+      ctx.body = await classModel.getList({
+        collegeId,
+        toggle,
+        session: {[Op.like]: `%${session}%`},
+        className: {[Op.like]: `%${className}%`}
+      });
+    }
   }
 
   async add(ctx) {
-    const {collegeId, className, session, toggle} = ctx.request.body;
-    ctx.body = await classModel.insert({collegeId, className, session, toggle});
+    const {_auth: roleId} = JWTDecode(ctx.header.authorization);
+    if (![1, 2].includes(roleId)) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {collegeId, className, session, toggle} = ctx.request.body;
+      ctx.body = await classModel.insert({collegeId, className, session, toggle});
+    }
   }
 
   async delete(ctx) {
-    const {id} = ctx.params;
-    ctx.body = await classModel.deleteById({id});
+    const {_auth: roleId} = JWTDecode(ctx.header.authorization);
+    if (![1, 2].includes(roleId)) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {id} = ctx.params;
+      ctx.body = await classModel.deleteById({id});
+    }
   }
 
   async update(ctx) {
-    const {id} = ctx.params;
-    const {collegeId, className, session, toggle} = ctx.request.body;
-    ctx.body = await classModel.update({id, collegeId, session, className, toggle})
+    const {_auth: roleId} = JWTDecode(ctx.header.authorization);
+    if (![1, 2].includes(roleId)) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {id} = ctx.params;
+      const {collegeId, className, session, toggle} = ctx.request.body;
+      ctx.body = await classModel.update({id, collegeId, session, className, toggle})
+    }
+
   }
 
   async getListByClassId(ctx) {
-    const {classId} = ctx.params;
-    ctx.body = await stuClassModel.getListByClassId({classId})
+    const {_auth: roleId} = JWTDecode(ctx.header.authorization);
+    if (![1, 2].includes(roleId)) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {classId} = ctx.params;
+      ctx.body = await stuClassModel.getListByClassId({classId})
+    }
   }
 
   async getUserClassList(ctx) {
-    ctx.body = await classModel.getUserClassList();
+    const {_auth: roleId} = JWTDecode(ctx.header.authorization);
+    if (roleId !== 4) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      ctx.body = await classModel.getUserClassList();
+    }
   }
 
   async getAssignerList(ctx) {
     const {_auth: roleId, _uid: assignId} = JWTDecode(ctx.header.authorization);
-    ctx.body = await classModel.getAssignerClassList({assignId});
+    if (roleId !== 6) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      ctx.body = await classModel.getAssignerClassList({assignId});
+    }
   }
 
   async insertByUser(ctx) {
     const {_auth: roleId, _uid: userId} = JWTDecode(ctx.header.authorization);
-    const {classId} = ctx.request.body;
-    ctx.body = await stuClassModel.insertByUser({userId, classId})
+    if (roleId !== 4) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {classId} = ctx.request.body;
+      ctx.body = await stuClassModel.insertByUser({userId, classId})
+    }
   }
 }
 

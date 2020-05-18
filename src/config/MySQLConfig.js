@@ -1,7 +1,7 @@
 export default {
   user: 'root',
-  password: '',
-  database: 'subscription_schema',
-  host: 'localhost',
+  password: 'yellow',
+  database: 'subscription',
+  host: '101.132.159.200',
   port: 3306
 };

@@ -4,5 +4,5 @@ seq.authenticate().
   then(() => console.log('ok')).
   catch((err) => console.log(err));
 
-seq.sync({force: false}).
+seq.sync({force: true}).
   then(() => process.exit());

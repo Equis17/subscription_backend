@@ -1,5 +1,7 @@
 import orderModel from '../../model/Order'
 import JWTDecode from 'jwt-decode';
+import bookListModel from '../../model/BookList';
+import userBookModel from '../../model/UserBook';
 
 class OrderController {
   constructor() {
@@ -26,13 +28,22 @@ class OrderController {
   }
 
   async addToOrder(ctx) {
-    const {id: quoteId} = ctx.request.body;
-    ctx.body = await orderModel.insert({quoteId, time: new Date(), status: '0'})
+    const {_auth: roleId} = JWTDecode(ctx.header.authorization);
+    if (roleId !== 5) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {id: quoteId} = ctx.request.body;
+      ctx.body = await orderModel.insert({quoteId, time: new Date(), status: '0'})
+    }
   }
 
   async getListById(ctx) {
-    const {_uid: sellerId} = JWTDecode(ctx.header.authorization);
-    ctx.body = await orderModel.getListById({sellerId})
+    const {_auth: roleId, _uid: sellerId} = JWTDecode(ctx.header.authorization);
+    if (roleId !== 5) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      ctx.body = await orderModel.getListById({sellerId})
+    }
   }
 
   async updateBySeller(ctx) {
@@ -43,14 +54,23 @@ class OrderController {
   }
 
   async deleteBySeller(ctx) {
-    const {_uid: sellerId} = JWTDecode(ctx.header.authorization);
-    const {id} = ctx.params;
-    ctx.body = await orderModel.deleteBySeller({sellerId, id})
+    const {_uid: sellerId, _auth: roleId} = JWTDecode(ctx.header.authorization);
+    if (roleId !== 4) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {id} = ctx.params;
+      ctx.body = await orderModel.deleteBySeller({sellerId, id})
+    }
+
   }
 
   async getListByUser(ctx) {
-    const {_uid: userId} = JWTDecode(ctx.header.authorization);
-    ctx.body = await orderModel.getListByUser({userId})
+    const {_uid: userId, _auth: roleId} = JWTDecode(ctx.header.authorization);
+    if (roleId !== 4) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      ctx.body = await orderModel.getListByUser({userId})
+    }
   }
 }
 

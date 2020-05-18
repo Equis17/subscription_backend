@@ -9,31 +9,57 @@ class SubscriptionController {
   }
 
   async getList(ctx) {
-    const {subscriptionName = '', status} = ctx.query;
-    ctx.body = await subscription.getList({
-      subscriptionName: {[Op.like]: `%${subscriptionName}%`},
-      status
-    })
+    const {_auth: authId} = JWTDecode(ctx.header.authorization);
+    if (![1, 2, 3].includes(authId)) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {subscriptionName = '', status} = ctx.query;
+      ctx.body = await subscription.getList({
+        subscriptionName: {[Op.like]: `%${subscriptionName}%`},
+        status
+      })
+    }
+
   }
 
-  async getListByAssigner(ctx){
+  async getListByAssigner(ctx) {
     const {_auth: roleId, _uid: assignId} = JWTDecode(ctx.header.authorization);
-    ctx.body=await subscription.getListByAssigner({assignId});
+    if (roleId !== 6) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      ctx.body = await subscription.getListByAssigner({assignId});
+    }
   }
+
   async add(ctx) {
-    const {subscriptionName = '', status} = ctx.request.body;
-    ctx.body = await subscription.insert({subscriptionName, status})
+    const {_auth: roleId, _uid: assignId} = JWTDecode(ctx.header.authorization);
+    if (![1, 2].includes(roleId)) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {subscriptionName = '', status} = ctx.request.body;
+      ctx.body = await subscription.insert({subscriptionName, status})
+    }
   }
 
   async delete(ctx) {
-    const {id} = ctx.params;
-    ctx.body = await subscription.delete({id})
+    const {_auth: roleId, _uid: assignId} = JWTDecode(ctx.header.authorization);
+    if (![1, 2].includes(roleId)) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {id} = ctx.params;
+      ctx.body = await subscription.delete({id})
+    }
   }
 
   async update(ctx) {
-    const {id} = ctx.params;
-    const {subscriptionName, status} = ctx.request.body;
-    ctx.body = await subscription.update({id, subscriptionName, status})
+    const {_auth: roleId, _uid: assignId} = JWTDecode(ctx.header.authorization);
+    if (![1, 2].includes(roleId)) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {id} = ctx.params;
+      const {subscriptionName, status} = ctx.request.body;
+      ctx.body = await subscription.update({id, subscriptionName, status})
+    }
   }
 }
 

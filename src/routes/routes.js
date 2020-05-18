@@ -1,10 +1,10 @@
 import combineRoutes from 'koa-combine-routers';
-import {sysRouterRouter, clientRouterRouter} from './Router'
-import {sysRoleRouter, clientRoleRouter} from './Role'
+import {sysRouterRouter} from './Router'
+import {sysRoleRouter} from './Role'
 import {sysCategoryRouter, clientCategoryRouter} from './Category'
-import {sysSysManagerRouter, clientSysManagerRouter} from './SysManager'
+import {sysSysManagerRouter} from './SysManager'
 import publicRouter from './Public'
-import {sysCollegeRouter, clientCollegeRouter} from './College'
+import {sysCollegeRouter} from './College'
 import {sysUserRouter, clientUserRouter} from './User'
 import {sysClassRouter, clientClassRouter} from './Class'
 import {sysBookRouter, clientBookRouter} from './Book'
@@ -38,12 +38,12 @@ const sysRouterList = [
 ];
 
 const clientRouterList = [
-  clientRouterRouter,
-  clientRoleRouter,
+  // clientRouterRouter,
+  // clientRoleRouter,
   clientCategoryRouter,
-  clientSysManagerRouter,
-  // clientPublicRouter,
-  clientCollegeRouter,
+  // clientSysManagerRouter,
+  // clientPublicRouter.
+  // clientCollegeRouter,
   clientUserRouter,
   clientClassRouter,
   clientBookRouter,

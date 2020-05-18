@@ -3,17 +3,13 @@ import _ from 'lodash'
 
 class RoleModel {
 
-  /**
-   * @param {string} id
-   * @param {string} toggle
-   * @return {Object}
-   * */
   async getList({roleName = '', toggle = ''}) {
     const where = _.pickBy({roleName, toggle: toggle === '1' ? '1' : toggle === '0' ? '0' : ''}, _.identity);
     try {
       const roleList = await Role.findAll({where, raw: true});
       return {code: 0, data: roleList}
     } catch (e) {
+      console.log(e);
       console.log('MethodError: <RoleModel.getList>');
       return {code: 9999, message: '系统内部错误'}
     }

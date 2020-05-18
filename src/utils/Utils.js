@@ -5,6 +5,7 @@ import {getValue} from '../config/RedisConfig'
 
 export const decryptInfo = (key) => {
   const privateKey = fs.readFileSync(path.join(__dirname, '../public/rsa_private_key.pem'), 'utf-8');
+  // const privateKey = fs.readFileSync(path.resolve(__dirname, '../dist/src/public/rsa_private_key.pem'), 'utf-8');
   let buffer2 = Buffer.from(key, 'base64');
   let decrypted = crypto.privateDecrypt({
     key: privateKey,

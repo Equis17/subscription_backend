@@ -6,18 +6,33 @@ class CategoryController {
   }
 
   async getList(ctx) {
-    ctx.body = await categoryModel.getList();
+    const {_auth: roleId} = JWTDecode(ctx.header.authorization);
+    if (roleId !== 1) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      ctx.body = await categoryModel.getList();
+    }
   }
 
   async add(ctx) {
-    const {routerList = [], roleId} = ctx.request.body;
-    ctx.body = await categoryModel.insert({routerIds: routerList.toString(), roleId})
+    const {_auth: roleId} = JWTDecode(ctx.header.authorization);
+    if (roleId !== 1) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {routerList = [], roleId} = ctx.request.body;
+      ctx.body = await categoryModel.insert({routerIds: routerList.toString(), roleId})
+    }
   }
 
   async update(ctx) {
-    const {id} = ctx.params;
-    const {roleId, routerList = []} = ctx.request.body;
-    ctx.body = await categoryModel.update({id, routerIds: routerList.toString(), roleId})
+    const {_auth: roleId} = JWTDecode(ctx.header.authorization);
+    if (roleId !== 1) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {id} = ctx.params;
+      const {roleId, routerList = []} = ctx.request.body;
+      ctx.body = await categoryModel.update({id, routerIds: routerList.toString(), roleId})
+    }
   }
 
   async getUserList(ctx) {

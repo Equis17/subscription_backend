@@ -2,12 +2,6 @@ import {Router} from '../model'
 import _ from 'lodash'
 
 class RouterModel {
-  /**
-   * @param {string} routerName
-   * @param {string} routerUrl
-   * @param {string} toggle
-   * @return {Object}
-   * */
   async getList({routerName = '', routerUrl = '', toggle = ''}) {
     const where = _.pickBy({routerName, routerUrl, toggle: toggle === '1' ? '1' : toggle === '0' ? '0' : ''}, _.identity);
     try {
@@ -19,12 +13,6 @@ class RouterModel {
     }
   }
 
-  /**
-   * @param {string} routerName
-   * @param {string} routerUrl
-   * @param {string} toggle
-   * @return {Object}
-   * */
   async insert({routerName = '', routerUrl = '', toggle = ''}) {
     if (!_.isEmpty(_.omitBy({routerName, routerUrl, toggle}, _.identity))) return {code: 9999, message: '参数不能为空'};
     try {
@@ -36,10 +24,6 @@ class RouterModel {
     }
   }
 
-  /**
-   * @param {string} id
-   * @return {Object}
-   * */
   async deleteById({id = ''}) {
     if (!_.isEmpty(_.omitBy({id}, _.identity))) return {code: 9999, message: '参数不能为空'};
     try {
@@ -51,13 +35,6 @@ class RouterModel {
     }
   }
 
-  /**
-   * @param {string} id
-   * @param {string} routerName
-   * @param {string} routerUrl
-   * @param {string} toggle
-   * @return {Object}
-   * */
   async update({id = '', routerName = '', routerUrl = '', toggle = ''}) {
     if (!_.isEmpty(_.omitBy({routerName, routerUrl, toggle, id}, _.identity))) return {code: 9999, message: '参数不能为空'};
     try {
@@ -70,7 +47,6 @@ class RouterModel {
       console.log('MethodError: <RouterModel.update>');
       return {code: 9999, message: '系统内部错误'};
     }
-
   }
 }
 

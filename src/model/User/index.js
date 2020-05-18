@@ -1,4 +1,4 @@
-import {User, Role, StuClass, Class, College} from '../model'
+import {User, Role, StuClass, Class, College, BookList} from '../model'
 import _ from 'lodash'
 import Sequelize from 'sequelize';
 
@@ -172,6 +172,18 @@ class UserModel {
     }
   }
 
+  async editUserInfo({account = '', password = '', userId = '', phoneNumber = ''}) {
+    try {
+      await User.update(
+        {password, phoneNumber},
+        {where: {account, id: userId}}
+      );
+      return {code: 0, message: '更新成功'};
+    } catch (e) {
+      console.log(e);
+      return {code: 9999, message: '系统内部错误'};
+    }
+  }
 }
 
 export default new UserModel()

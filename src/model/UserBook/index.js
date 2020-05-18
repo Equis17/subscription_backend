@@ -108,7 +108,7 @@ class UserBookModel {
   async getUserBookList({userId}) {
     if (!_.isEmpty(_.omitBy({userId}, _.identity))) return {code: 9999, message: '参数不能为空'};
     try {
-      const bookList = await UserBook.findAll({raw: true, where: {userId}, attributes: ['id', 'userId', 'bookId', 'isPay']})
+      const bookList = await UserBook.findAll({raw: true, where: {userId}, attributes: ['id', 'userId', 'bookId', 'isPay','subscriptionId']});
       return {code: 0, data: bookList}
     } catch (e) {
       console.log(e)
@@ -118,6 +118,7 @@ class UserBookModel {
   async handleUserBook({userId = '', bookId = '', isPay = '', subscriptionId = ''}) {
     if (!_.isEmpty(_.omitBy({userId, bookId, isPay, subscriptionId}, _.identity))) return {code: 9999, message: '参数不能为空'};
     try {
+      console.log(userId);
       const bookInfo = await UserBook.findOne({raw: true, where: {bookId, userId, subscriptionId}});
       bookInfo
         ? await UserBook.update({isPay}, {where: {bookId, userId, subscriptionId}})
@@ -130,7 +131,7 @@ class UserBookModel {
 
   async getUserBook({userId = ''}) {
     try {
-      const userClassInfo = await stuClassModel.getInfoByUserId({
+/*      const userClassInfo = await stuClassModel.getInfoByUserId({
         userId,
         className: {[Op.like]: '%%'},
         session: {[Op.like]: '%%'},
@@ -142,11 +143,11 @@ class UserBookModel {
         include: [
           {model: Subscription, attributes: [], as: 'subscription'}
         ],
-        attributes: ['bookIds', 'classIds', Sequelize.col('subscription.status')]
+        attributes: ['bookIds', 'classIds', Sequelize.col('subscription.status'),[Sequelize.col('subscription.id'),'subscriptionId'],Sequelize.col('subscription.subscriptionName')]
       });
-
       const userBookList = bookLists.filter(bookList => bookList.classIds.split(',').
         includes(userClassInfo.classId.toString()))[0];
+      console.log(userBookList);
       const data = await Promise.all(userBookList.bookIds.split(',').
         map(async id => ({
           id,
@@ -178,12 +179,50 @@ class UserBookModel {
               'subscriptionId',
               Sequelize.col('subscription.subscriptionName'),
               Sequelize.col('subscription.status'),
-
             ]
           })
         })));
 
-      return {code: 0, data: data.filter(item => item.userBookId)}
+      return {code: 0, data: data.filter(item => item.userBookId)}*/
+      const userBookInfoList =await UserBook.findAll({
+        raw:true,
+        where:{userId,isPay:1},
+        include:[
+          {model:Subscription,attributes:[],as:'subscription'},
+          {model:Book,attributes:[],as:'book'}
+        ],
+        attributes:[
+          'id',
+          'bookId',
+          Sequelize.col('book.bookName'),
+          Sequelize.col('book.ISBN'),
+          'subscriptionId',
+          Sequelize.col('subscription.subscriptionName'),
+          Sequelize.col('subscription.status')
+
+        ]
+      });
+      const userBookList =await Promise.all(userBookInfoList.map(async item=>{
+        //TODO 介入报价表的价格
+        const quoteInfo=await Quote.findOne({
+          raw:true,
+          where:{subscriptionId:item.subscriptionId,status:2},
+          include:[
+            {model:Seller,attributes:[],as:'seller'}
+          ],
+          attributes:[
+            'sellerId',
+            'price',
+            Sequelize.col('seller.sellerName'),
+            Sequelize.col('seller.source')
+          ]
+        });
+        return{
+          ...item,
+          ...quoteInfo
+        }
+      }))
+      return {code:0,data:userBookList}
     } catch (e) {
       console.log(e)
     }

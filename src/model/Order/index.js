@@ -2,6 +2,8 @@ import {Book, Quote, Seller, SellerOrder, Subscription, UserBook} from '../model
 import Sequelize from 'sequelize';
 import _ from 'lodash';
 
+const {Op} = Sequelize;
+
 class OrderModel {
 
   async getList() {
@@ -42,7 +44,7 @@ class OrderModel {
         const userBook = await UserBook.findAndCountAll({
           raw: true,
           where: {bookId: order.bookId, isPay: 1},
-          include: [{model: Subscription, attributes: [], where: {status: 4}, as: 'subscription'}]
+          include: [{model: Subscription, attributes: [], where: {status: {[Op.between]: [4, 5]}}, as: 'subscription'}]
         });
         return {
           ...order,
@@ -107,44 +109,57 @@ class OrderModel {
 
   async getListByUser({userId = ''}) {
     try {
-      const userBookList = await UserBook.findAll({raw: true, where: {userId}, attributes: ['userId', 'bookId', 'isPay', 'subscriptionId']});
-      const data = await Promise.all(userBookList.map(async book => {
-          const info = await SellerOrder.findOne({
+      const userBookList = await UserBook.findAll({
+        raw: true,
+        where: {userId, isPay: 1},
+        include:[
+          {model:Subscription,where:{status: {[Op.between]: [4, 5]}},attributes:[],as:'subscription'},
+          {model:Book,attributes:[],as:'book'}
+        ],
+        attributes: [
+          'id',
+          'userId',
+          'bookId',
+          'isPay',
+          'subscriptionId',
+          Sequelize.col('subscription.subscriptionName'),[Sequelize.col('subscription.status'),'subscriptionStatus'],
+          Sequelize.col('book.bookName'),Sequelize.col('book.ISBN'),
+        ]
+      });
+      const quoteList=await  Promise.all(userBookList.map(async book=>{
+        const info =await Quote.findOne({
+          raw:true,
+          where:{bookId:book.bookId,subscriptionId:book.subscriptionId,status:2},
+          include:[{model:Seller,attributes:[],as:'seller'}],
+          attributes:[
+            ['id','quoteId'],
+            'price',
+            [Sequelize.col('seller.id'),'sellerId'],
+            Sequelize.col('seller.sellerName'),
+            Sequelize.col('seller.address'),
+            Sequelize.col('seller.phoneNumber'),
+            Sequelize.col('seller.source'),
+            Sequelize.col('seller.email'),
+          ]
+        });
+        return {...book,...info}
+      }));
+      const data = await Promise.all(quoteList.map(async info => {
+
+          const orderInfo = await SellerOrder.findOne({
             raw: true,
-            include: [
-              {
-                model: Quote,
-                attributes: [],
-                where:{status:2,bookId:book.bookId},
-                include: [
-                  {model: Book,  attributes: [], as: 'book'},
-                  {model: Seller, attributes: [], as: 'seller'}
-                ],
-                as: 'quote',
-              }
-            ],
+            where:{
+              quoteId:info.quoteId
+            },
             attributes: [
-              'id',
-              'quoteId',
               'time',
-              'status',
-              Sequelize.col('quote.price'),
-              Sequelize.col('quote.book.bookName'),
-              Sequelize.col('quote.book.ISBN'),
-              Sequelize.col('quote.sellerId'),
-              Sequelize.col('quote.seller.sellerName'),
-              Sequelize.col('quote.seller.source'),
-              Sequelize.col('quote.seller.email'),
-              Sequelize.col('quote.seller.phoneNumber'),
-              Sequelize.col('quote.seller.address')
+              'status'
             ]
           });
-          return info
-            ? {...book, ...info}
-            : {}
+          return {...info, ...orderInfo}
         }
       ));
-      return {code: 0, data:data.filter(item=>JSON.stringify(item)!=='{}')}
+      return {code: 0, data}
     } catch (e) {
       console.log(e)
     }
@@ -158,7 +173,7 @@ class OrderModel {
         return {code: 0, message: '订单已存在'}
       } else {
         await SellerOrder.create({quoteId, time, status});
-        return {code: 0, message: '添加成功'}
+        return {code: 0, message: '发货成功'}
       }
     } catch (e) {
       console.log('MethodError: <ClassModel.insert>');

@@ -8,21 +8,24 @@ const Op = Sequelize.Op;
 class QuoteModel {
 
 
-  async getList({bookId = '', sellerId = '', price = '', status = ''}) {
-    const where = _.pickBy({bookId, sellerId, price, status}, _.identity);
+  async getList({bookId = '', sellerId = '', price = '', status = '',subscriptionId=''}) {
+    const where = _.pickBy({bookId, sellerId, price, status,subscriptionId}, _.identity);
     try {
       const quoteList = await Quote.findAll({
         raw: true,
         where,
         include: [
           {model: Seller, attributes: [], as: 'seller'},
-          {model: Book, where: {toggle: 1, status: 2}, attributes: [], as: 'book'}
+          {model: Book, where: {toggle: 1, status: 2}, attributes: [], as: 'book'},
+          {model:Subscription,attributes:[],as:'subscription'}
         ],
         attributes: [
           'id',
           'price',
           'time',
           'status',
+          [Sequelize.col('subscription.id'), 'subscriptionId'],
+          Sequelize.col('subscription.subscriptionName'),
           [Sequelize.col('book.id'), 'bookId'],
           Sequelize.col('book.bookName'),
           Sequelize.col('book.ISBN'),
@@ -39,10 +42,10 @@ class QuoteModel {
     }
   }
 
-  async insert({bookId = '', sellerId = '', price = '', status = ''}) {
-    if (!_.isEmpty(_.omitBy({bookId, sellerId, price, status}, _.identity))) return {code: 9999, message: '参数不能为空'};
+  async insert({bookId = '', sellerId = '', price = '', status = '',subscriptionId=''}) {
+    if (!_.isEmpty(_.omitBy({bookId, sellerId, price, status,subscriptionId}, _.identity))) return {code: 9999, message: '参数不能为空'};
     try {
-      await Quote.create({bookId, sellerId, time: Date.now(), price, status});
+      await Quote.create({bookId, sellerId, time: Date.now(), price, status,subscriptionId});
       return {code: 0, message: '添加成功'};
     } catch (e) {
       console.log(e)
@@ -74,14 +77,14 @@ class QuoteModel {
     }
   }
 
-  async sub({sellerId = '', bookId = ''}) {
-    if (!_.isEmpty(_.omitBy({sellerId, bookId}, _.identity))) return {code: 9999, message: '参数不能为空'};
+  async sub({sellerId = '', bookId = '',subscriptionId=''}) {
+    if (!_.isEmpty(_.omitBy({sellerId, bookId,subscriptionId}, _.identity))) return {code: 9999, message: '参数不能为空'};
     try {
       await Quote.update(
         {status: '3'},
-        {where: {bookId}}
+        {where: {bookId,subscriptionId}}
       );
-      await Quote.update({status: '2'}, {where: {bookId, sellerId}});
+      await Quote.update({status: '2'}, {where: {bookId, sellerId,subscriptionId}});
       return {code: 0, message: '征订成功'};
     } catch (e) {
       console.log('MethodError: <QuoteModel.update>');
@@ -92,28 +95,32 @@ class QuoteModel {
   async getQuotedList({id = ''}) {
     if (!_.isEmpty(_.omitBy({id}, _.identity))) return {code: 9999, message: '参数不能为空'};
     try {
-      const bookLists = await BookList.findAll({
+      //获取所有书单
+    /*  const bookLists = await BookList.findAll({
         raw: true,
         include: [
           {model: Subscription, where: {status: {[Op.between]: [1, 4]}}, attributes: [], as: 'subscription'}
         ],
         attributes: [
+          'id',
           'bookIds',
-          Sequelize.col('subscription.status')
+          Sequelize.col('subscription.status'),
+          [          Sequelize.col('subscription.id'),'subscriptionId']
         ]
       });
-
 
       let list = [];
       bookLists.map(bookList => list.push(...bookList.bookIds.split(',').
         map(id => ({bookId: id, bookListStatus: bookList.status}))));
-
+      console.log(list);
       const bookIdsList = bookLists.length > 0
         ? _.uniq(bookLists.map(i => i.bookIds).
           join(',').
           split(','))
         : [];
+      console.log(bookIdsList);
       const uniqList = bookIdsList.map(item => _.maxBy(list.filter(book => book.bookId === item), o => o.bookListStatus));
+      console.log(uniqList)
       const quotedList = await Quote.findAll({
         raw: true,
         where: {sellerId: id, status: 2},
@@ -143,7 +150,37 @@ class QuoteModel {
           count: userBook.count
         }
       }));
-
+*/
+      const quotedList=await Quote.findAll({
+        raw: true,
+        where: {sellerId: id, status: 2},
+        include: [
+          {model: Book, attributes: [], as: 'book'},
+          {model:Subscription,attributes:[],as:'subscription'}
+        ],
+        attributes: [
+          'id',
+          'bookId',
+          Sequelize.col('book.bookName'),
+          Sequelize.col('book.ISBN'),
+          [Sequelize.col('subscription.id'),'subscriptionId'],
+          Sequelize.col('subscription.subscriptionName'),
+          'time',
+          [Sequelize.col('subscription.status'),'bookListStatus'],
+          'price'
+        ]
+      });
+      const data = await Promise.all(quotedList.map(async quote => {
+        const userBook = await UserBook.findAndCountAll({
+          raw: true,
+          where: {bookId: quote.bookId, isPay: 1,subscriptionId:quote.subscriptionId},
+          include: [{model: Subscription, attributes: [], as: 'subscription'}]
+        });
+        return {
+          ...quote,
+          count: userBook.count
+        }
+      }));
       return {code: 0, data}
     } catch (e) {
       console.log(e)
@@ -152,10 +189,32 @@ class QuoteModel {
 
   async cancelQuote({sellerId, id}) {
     try {
-      await Quote.destroy({where: {id, sellerId}});
+      const info =await Quote.findOne({
+        raw:true,
+        where:{id},
+        attributes:['subscriptionId','bookId']
+      });
+      await Quote.destroy({where: {id, sellerId,status:2}});
+      await Quote.update(
+        {status:1},
+        {where: { ...info}}
+      );
       return {code: 0, message: '操作成功'}
     } catch (e) {
       console.log(e)
+    }
+  }
+
+  async updateQuote({sellerId='', bookId='', price='',subscriptionId}) {
+    try {
+      await Quote.update(
+        {price},
+        {where: {sellerId,bookId,subscriptionId}}
+      );
+      return {code: 0, message: '更新成功'};
+    } catch (e) {
+      console.log('MethodError: <BookModel.update>');
+      return {code: 9999, message: '系统内部错误'};
     }
   }
 }

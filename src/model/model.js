@@ -189,7 +189,7 @@ const UserBook = seq.define('userBook', {
   //是否支付
   isPay: {type: Sequelize.BOOLEAN, allowNull: false},
   //
-  subscriptionId:{type:Sequelize.INTEGER,allowNull:false}
+  subscriptionId: {type: Sequelize.INTEGER, allowNull: false}
 });
 
 UserBook.belongsTo(User, {foreignKey: 'userId'});
@@ -200,6 +200,7 @@ Book.hasMany(UserBook, {foreignKey: 'bookId', target: 'id'});
 const Quote = seq.define('quote', {
   bookId: {type: Sequelize.INTEGER, allowNull: false},
   sellerId: {type: Sequelize.INTEGER, allowNull: false},
+  subscriptionId: {type: Sequelize.INTEGER, allowNull: false},
   price: {type: Sequelize.STRING, allowNull: false},
   time: {type: Sequelize.DATE, allowNull: false},
   status: {type: Sequelize.INTEGER, allowNull: false}
@@ -246,11 +247,13 @@ const Subscription = seq.define('subscription', {
   subscriptionName: {type: Sequelize.STRING, allowNull: false},
   status: {type: Sequelize.INTEGER, allowNull: false},
 });
-BookList.belongsTo(Subscription,{foreignKey:'subscriptionId'});
+Quote.belongsTo(Subscription, {foreignKey: 'subscriptionId'});
+Subscription.hasMany(Quote, {foreignKey: 'subscriptionId', target: 'id'});
+BookList.belongsTo(Subscription, {foreignKey: 'subscriptionId'});
 Subscription.hasMany(BookList, {foreignKey: 'subscriptionId', target: 'id'});
 
-UserBook.belongsTo(Subscription,{foreignKey:'subscriptionId'});
+UserBook.belongsTo(Subscription, {foreignKey: 'subscriptionId'});
 Subscription.hasMany(UserBook, {foreignKey: 'subscriptionId', target: 'id'});
 
 
-export {Role, Router, Category, SysManager, College, User, Class, StuClass, Seller, Book, UserBook, Quote, SellerOrder, BookList, Assign,Subscription}
+export {Role, Router, Category, SysManager, College, User, Class, StuClass, Seller, Book, UserBook, Quote, SellerOrder, BookList, Assign, Subscription}

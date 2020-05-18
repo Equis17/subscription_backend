@@ -14,19 +14,34 @@ class RoleController {
   }
 
   async add(ctx) {
-    const {roleName, toggle} = ctx.request.body;
-    ctx.body = await RoleModel.insert({roleName, toggle});
+    const {_auth: roleId} = JWTDecode(ctx.header.authorization);
+    if (roleId !== 1) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {roleName, toggle} = ctx.request.body;
+      ctx.body = await RoleModel.insert({roleName, toggle});
+    }
   }
 
   async delete(ctx) {
-    const {id} = ctx.params;
-    ctx.body = await RoleModel.deleteById({id});
+    const {_auth: roleId} = JWTDecode(ctx.header.authorization);
+    if (roleId !== 1) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {id} = ctx.params;
+      ctx.body = await RoleModel.deleteById({id});
+    }
   }
 
   async update(ctx) {
-    const {id} = ctx.params;
-    const {roleName, toggle} = ctx.request.body;
-    ctx.body = await RoleModel.update({id, roleName, toggle});
+    const {_auth: roleId} = JWTDecode(ctx.header.authorization);
+    if (roleId !== 1) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {id} = ctx.params;
+      const {roleName, toggle} = ctx.request.body;
+      ctx.body = await RoleModel.update({id, roleName, toggle});
+    }
   }
 }
 

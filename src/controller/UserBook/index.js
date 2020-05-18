@@ -50,14 +50,22 @@ class UserBookController {
   }
 
   async handleUserBook(ctx) {
-    const {_uid: userId} = JWTDecode(ctx.header.authorization);
-    const {bookId, isPay,subscriptionId} = ctx.request.body;
-    ctx.body = await userBookModel.handleUserBook({userId, bookId, isPay,subscriptionId})
+    const {_auth: roleId, _uid: userId} = JWTDecode(ctx.header.authorization);
+    if (roleId !== 4) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      const {bookId, isPay, subscriptionId} = ctx.request.body;
+      ctx.body = await userBookModel.handleUserBook({userId, bookId, isPay, subscriptionId})
+    }
   }
 
   async getUserBook(ctx) {
-    const {_uid: userId} = JWTDecode(ctx.header.authorization);
-    ctx.body = await userBookModel.getUserBook({userId})
+    const {_auth: roleId, _uid: userId} = JWTDecode(ctx.header.authorization);
+    if (roleId !== 4) {
+      ctx.body = {code: 9999, message: '你无权进行此操作'}
+    } else {
+      ctx.body = await userBookModel.getUserBook({userId})
+    }
   }
 
 }
