@@ -58,7 +58,7 @@
     "rimraf": "^3.0.0",
     "terser-webpack-plugin": "^2.1.0",
     "webpack": "^4.40.2",
-    "webpack-cli": "^3.3.9",
+    "webpack-cli": "^3.3.12",
     "webpack-node-externals": "^1.7.2"
   }
 }
